@@ -1,10 +1,15 @@
 FROM python:3.11-slim
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
+ENV UV_LINK_MODE=copy
 
-COPY pyproject.toml .
-RUN pip install --no-cache-dir -e ".[dev]"
-
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
 COPY . .
+RUN uv sync --frozen --no-dev
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
