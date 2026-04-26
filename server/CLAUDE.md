@@ -9,9 +9,11 @@ Este arquivo dá contexto ao Claude Code ao trabalhar neste repositório.
 O cliente Flutter (em diretório separado) faz captura e OCR via Google ML Kit. Este repositório contém **apenas o backend**, responsável por:
 
 - Traduzir textos via LibreTranslate self-hosted.
-- Manter histórico de decks e cards por usuário.
-- Cachear traduções globalmente (compartilhadas entre usuários).
+- Manter histórico de decks e cards.
+- Cachear traduções globalmente (compartilhadas).
 - Gerar arquivos `.apkg` via `genanki` para download direto.
+
+**Sem autenticação.** A API é aberta — não há `X-API-Key`, usuários ou tokens. O caso de uso é pessoal/local.
 
 ## Componentes
 
@@ -60,7 +62,7 @@ Flutter → GET /decks/{id}/export
 
 ```bash
 cd server
-cp .env.example .env              # preencher ADMIN_TOKEN
+cp .env.example .env              # preencher DATABASE_URL e LIBRETRANSLATE_URL
 docker compose up -d              # sobe backend + libretranslate
 
 # migrations
@@ -72,34 +74,53 @@ curl http://localhost:8000/health  # { status: "ok", libretranslate: "ok" }
 
 ## Comandos de desenvolvimento
 
-Todos rodados a partir de `server/`:
+O projeto usa **[uv](https://docs.astral.sh/uv/)** (lockfile: `uv.lock`, ambiente: `server/.venv`).
+
+**Instalar [uv](https://docs.astral.sh/uv/getting-started/installation/)** (uma vez no sistema) e, na pasta `server/`:
+
+```bash
+uv sync          # cria/actualiza .venv a partir de uv.lock (inclui grupo dev)
+uv run …         # executa no ambiente do projecto sem activar o venv manualmente
+```
+
+Todos os comandos abaixo a partir de `server/`:
 
 ```bash
 # Rodar servidor local (sem Docker)
-uvicorn app.main:app --reload
+uv run uvicorn src.main:app --reload
 
-# Rodar testes
-pytest                            # todos
-pytest tests/test_cache.py -v     # arquivo específico
-pytest -k "test_hit" -v           # por nome
+# Rodar TODOS os testes (obrigatório antes de qualquer commit)
+uv run pytest
+
+# Rodar testes com cobertura
+uv run pytest --cov=src --cov-report=term-missing
+
+# Arquivo específico
+uv run pytest tests/test_cache.py -v
+
+# Por nome
+uv run pytest -k "test_hit" -v
 
 # Lint e format
-ruff check .
-ruff format .
+uv run ruff check .
+uv run ruff format .
 
 # Nova migration
-alembic revision --autogenerate -m "descrição"
-alembic upgrade head
+uv run alembic revision --autogenerate -m "descrição"
+uv run alembic upgrade head
 
 # Subir só o LibreTranslate (útil em dev local)
 docker compose up -d libretranslate
 ```
+
+`pip` ainda funciona: `cd server && .venv/bin/pip` após `uv sync`, mas o workflow recomendado é `uv sync` e `uv run`.
 
 ## Estrutura do projeto
 
 ```
 server/
 ├── pyproject.toml              # deps + tooling (ruff, pytest)
+├── uv.lock                     # lockfile (uv) — comitar
 ├── docker-compose.yml          # backend + libretranslate
 ├── Dockerfile
 ├── .env.example
@@ -109,12 +130,10 @@ server/
 │   ├── main.py                 # FastAPI app, routers, middleware
 │   ├── config.py               # Settings(BaseSettings)
 │   ├── db.py                   # engine, SessionLocal, get_db
-│   ├── models.py               # User, Deck, Card, TranslationCache
+│   ├── models.py               # Deck, Card, TranslationCache
 │   ├── schemas.py              # Pydantic: DeckIn/Out, CardIn/Out, etc.
-│   ├── auth.py                 # dependency X-API-Key
 │   ├── hashing.py              # SHA256 helpers
 │   ├── routers/
-│   │   ├── auth.py
 │   │   ├── decks.py
 │   │   ├── cards.py
 │   │   └── translate.py
@@ -133,11 +152,10 @@ server/
 
 ## Schema do banco
 
-Quatro tabelas. Cache é **global** (não tem `user_id`), compartilhado entre todos.
+Três tabelas. Cache é **global**, compartilhado por todos os decks.
 
 ```sql
-users             (id, name, api_key UNIQUE, created_at)
-decks             (id, user_id FK, name, source_lang, target_lang, created_at)
+decks             (id, name, source_lang, target_lang, created_at)
 cards             (id, deck_id FK, source_text, translated_text, context, created_at,
                    UNIQUE(deck_id, source_text))
 translation_cache (id, source_lang, target_lang, source_hash, source_text,
@@ -150,15 +168,13 @@ translation_cache (id, source_lang, target_lang, source_hash, source_text,
 
 ## Referência da API
 
-Autenticação: header `X-API-Key: <key>` em todas as rotas exceto `/health`.
+Sem autenticação — todas as rotas são públicas.
 
 | Método | Rota                          | Descrição                                     |
 | ------ | ----------------------------- | --------------------------------------------- |
-| GET    | `/health`                     | Status do servidor + LibreTranslate (público) |
-| POST   | `/auth/register`              | Cria usuário, requer `X-Admin-Token`          |
-| GET    | `/me`                         | Valida key, retorna perfil                    |
+| GET    | `/health`                     | Status do servidor + LibreTranslate           |
 | POST   | `/decks`                      | Cria deck                                     |
-| GET    | `/decks`                      | Lista decks do usuário                        |
+| GET    | `/decks`                      | Lista todos os decks                          |
 | GET    | `/decks/{id}`                 | Detalhes + cards                              |
 | DELETE | `/decks/{id}`                 | Deleta deck                                   |
 | POST   | `/decks/{id}/cards`           | Batch: traduz (cache first) + persiste        |
@@ -170,9 +186,10 @@ OpenAPI automático em `http://localhost:8000/docs`.
 
 ## Decisões de design importantes
 
+- **Sem autenticação.** Uso pessoal/local; adicionar auth depois é trivial se necessário.
 - **OCR fica no cliente.** O servidor nunca lida com imagens; recebe texto já extraído. Isso mantém o backend simples e barato.
 - **Python é obrigatório.** `genanki` não tem equivalente maduro em Go/Node/Rust. Essa decisão é fixa.
-- **Cache é global.** Se o usuário A traduziu "melange", o usuário B recebe a tradução do cache — não retraduz. Sem `user_id` em `translation_cache`.
+- **Cache é global.** Se o deck A traduziu "melange", o deck B recebe a tradução do cache — não retraduz.
 - **Batch sempre.** O endpoint `POST /decks/{id}/cards` sempre aceita um array de items. Flutter pode mandar 1, mas o shape é sempre de lista. Evita round-trips.
 - **Lookup de cache em uma query só.** Calcular todos os hashes primeiro, depois `WHERE source_hash IN (...)` — nunca fazer N queries num loop.
 - **LibreTranslate batch.** A API aceita array em `/translate`; chamar uma vez só com os misses, nunca N vezes.
@@ -190,10 +207,15 @@ OpenAPI automático em `http://localhost:8000/docs`.
 
 ## Padrões de teste
 
-- Fixtures em `conftest.py`: `client` (AsyncClient), `db` (SQLite in-memory), `mock_translator` (subclasse fake de Translator).
+**Testes são obrigatórios.** Nenhum módulo, serviço ou endpoint vai para produção sem cobertura de testes automatizados. A regra é: se não tem teste, não está pronto.
+
+- Fixtures em `conftest.py`: `client` (AsyncClient), `db` (SQLite in-memory), `mock_translator` (subclasse fake de `LibreTranslateClient`).
 - **Nunca chamar LibreTranslate de verdade em testes** — sempre mockar via dependency override.
+- **Todo novo endpoint** deve ter teste de caminho feliz + pelo menos um caso de erro.
+- **Todo novo serviço** deve ter testes unitários isolados (sem dependência de rede ou banco real).
 - Testes de cache cobrem: cache vazio, hit total, miss total, mistura (alguns hits + alguns misses).
 - Teste de export valida que o `.apkg` é um ZIP válido e contém os arquivos esperados (`collection.anki2`, `media`).
+- Rodar `pytest --cov=app` para verificar cobertura antes de considerar qualquer feature completa.
 
 ## Armadilhas conhecidas
 
@@ -209,7 +231,7 @@ OpenAPI automático em `http://localhost:8000/docs`.
 1. Schema em `app/schemas.py`.
 2. Router em `app/routers/<arquivo>.py`.
 3. Registrar o router em `app/main.py`.
-4. Teste em `tests/test_<arquivo>.py`.
+4. **Teste em `tests/test_<arquivo>.py`** — obrigatório, não opcional.
 
 **Adicionar nova coluna:**
 
@@ -231,6 +253,6 @@ Ver `docs/plano-viktoranki-v2.md` para o roadmap completo. Em ordem:
 1. `pyproject.toml` + `docker-compose.yml` + `Dockerfile`.
 2. Modelos + primeira migration.
 3. `services/translator.py` e `services/cache.py`.
-4. Routers (auth → decks → cards → translate → export).
+4. Routers (decks → cards → translate → export).
 5. `services/anki_exporter.py`.
-6. Testes e validação manual no Anki desktop.
+6. Testes automatizados para todos os módulos + validação manual no Anki desktop.
