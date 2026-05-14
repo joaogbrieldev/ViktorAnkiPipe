@@ -8,6 +8,12 @@ class CardCreate(BaseModel):
     context: str | None = None
 
 
+class CardBatchIn(BaseModel):
+    items: list[CardCreate] = Field(min_length=1)
+    source_lang: str = "en"
+    target_lang: str = "pt"
+
+
 class CardOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
