@@ -3,8 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.cards.models import Card  # noqa: F401 — registers ORM mapper
 from src.config import settings
 from src.exceptions import register_exception_handlers
+from src.sessions.models import Session  # noqa: F401 — registers ORM mapper
 from src.sessions.routes import router as sessions_router
 
 

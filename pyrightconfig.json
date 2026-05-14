@@ -1,0 +1,11 @@
+{
+  "venvPath": "server",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "server",
+      "pythonVersion": "3.11",
+      "extraPaths": ["."]
+    }
+  ]
+}
