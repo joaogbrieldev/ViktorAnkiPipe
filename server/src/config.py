@@ -25,7 +25,7 @@ class Config(BaseSettings):
     LIBRETRANSLATE_URL: str = "http://localhost:5001"
     REDIS_URL: str = "redis://localhost:6379"
     REDIS_CACHE_TTL_SECONDS: int | None = None
-    ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
 
     # Variável de ambiente como texto simples (evita json.loads em list[str] antes dos validators).
     cors_origins_env: str = Field(default="*", alias="CORS_ORIGINS")
