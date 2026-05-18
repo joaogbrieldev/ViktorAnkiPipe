@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.cards.models import Card  # noqa: F401 — registers ORM mapper
+from src.cards.routes import router as cards_router
 from src.config import settings
 from src.exceptions import register_exception_handlers
 from src.sessions.models import Session  # noqa: F401 — registers ORM mapper
@@ -32,6 +33,7 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(sessions_router)
+app.include_router(cards_router)
 
 
 @app.get("/health")
