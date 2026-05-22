@@ -63,7 +63,7 @@ Flutter → GET /sessions/{id}/export
 - **Redis** — cache global de traduções (substitui a tabela `translation_cache`)
 - **redis-py (async)** — client Redis com suporte a `asyncio` (`redis.asyncio`)
 - **httpx** — client async para LibreTranslate
-- **anthropic** — SDK oficial da Anthropic para geração de frases de exemplo
+- **google-genai** — SDK oficial do Google para geração de frases de exemplo via Gemini 2.5 Flash
 - **genanki** — geração de `.apkg`
 - **pydantic-settings** — config via `.env`
 - **pytest + httpx.AsyncClient** — testes
@@ -73,7 +73,7 @@ Flutter → GET /sessions/{id}/export
 
 ```bash
 cd server
-cp .env.example .env              # preencher DATABASE_URL, LIBRETRANSLATE_URL, REDIS_URL, ANTHROPIC_API_KEY
+cp .env.example .env              # preencher DATABASE_URL, LIBRETRANSLATE_URL, REDIS_URL, GEMINI_API_KEY
 docker compose up -d              # sobe backend + libretranslate + redis
 
 # migrations
@@ -247,15 +247,24 @@ OpenAPI automático em `http://localhost:8000/docs`.
 - Teste de export valida que o `.apkg` é um ZIP válido e contém os arquivos esperados (`collection.anki2`, `media`).
 - Rodar `pytest --cov=app` para verificar cobertura antes de considerar qualquer feature completa.
 
-## Integração com IA (Claude API)
+## Integração com IA (Gemini API)
 
 O endpoint `POST /cards/{card_id}/example` gera uma frase de exemplo em inglês contextualizada para a palavra ou expressão traduzida no card.
+
+**Ficheiros envolvidos:**
+
+| Ficheiro | Responsabilidade |
+| -------- | ---------------- |
+| `src/cards/ai_service.py` | `GeminiService` — chama a API; `_build_prompt` |
+| `src/cards/dependencies.py` | `get_gemini_service` (singleton via `lru_cache`); `GeminiDep` |
+| `src/cards/service.py` | `get_example_sentence` — busca card + delega ao Gemini |
+| `src/cards/routes.py` | `POST /cards/{card_id}/example` |
 
 **Fluxo:**
 
 1. Busca o card pelo `card_id` no banco.
 2. Monta prompt com `source_text`, `translated_text` **e `context`** (frase original onde a palavra apareceu) do card.
-3. Chama a Claude API via `anthropic` SDK (modelo `claude-haiku-4-5` — rápido e barato).
+3. Chama a Gemini API via `google-genai` SDK (modelo `gemini-2.5-flash` — rápido e barato).
 4. Retorna `{ "example_sentence": "..." }`.
 
 **Prompt base:**
@@ -272,14 +281,17 @@ Return only the sentence, nothing else.
 
 O campo `context` é a frase original onde o usuário encontrou a palavra. Quando presente, o modelo gera um exemplo que respeita o registro e domínio do texto original, produzindo frases muito mais úteis para revisão no Anki.
 
-**Configuração:** `ANTHROPIC_API_KEY` no `.env`. O SDK lê automaticamente a variável de ambiente `ANTHROPIC_API_KEY`.
+**Configuração:** `GEMINI_API_KEY` no `.env`. O SDK recebe a chave explicitamente via `genai.Client(api_key=...)`.
 
 **Decisões:**
 
-- Haiku por padrão — latência < 1s, custo mínimo para frases curtas.
+- Gemini 2.5 Flash por padrão — latência baixa, custo mínimo para frases curtas.
+- Singleton via `lru_cache` em `get_gemini_service` — um único `genai.Client` por processo.
 - Sem cache de exemplos — frases são geradas on-demand; variedade é desejável.
 - Sem streaming — a frase é curta o suficiente para resposta direta.
 - `context` sempre incluído no prompt quando disponível — melhora a qualidade sem custo de latência.
+
+**Mock em testes:** subclasse `GeminiService` com `__init__` vazio e `generate_example` síncrono retornando string fixa; injectar via `app.dependency_overrides[get_gemini_service] = lambda: _FakeGemini()`.
 
 ## Armadilhas conhecidas
 
@@ -288,7 +300,7 @@ O campo `context` é a frase original onde o usuário encontrou a palavra. Quand
 - **SQLite + async**: usar `aiosqlite` como driver (`sqlite+aiosqlite:///...`) e `AsyncSession` do SQLAlchemy 2.x. Misturar sessão sync com engine async quebra sutilmente.
 - **`UNIQUE(deck_id, source_text)`** em `cards`: ao adicionar o mesmo texto duas vezes no mesmo deck, retornar o card existente em vez de quebrar. O conflito deve ser tratado como idempotência, não como erro.
 - **Redis `MGET` retorna `None` para chaves ausentes** — iterar resultado com zip para separar hits e misses em vez de assumir que todos os valores estão presentes.
-- **Claude API tem custo por chamada** — `POST /cards/{id}/example` não deve ser chamado em loop automático; é sempre ação explícita do usuário.
+- **Gemini API tem custo por chamada** — `POST /cards/{id}/example` não deve ser chamado em loop automático; é sempre ação explícita do usuário.
 
 ## Fluxos comuns
 
@@ -321,7 +333,7 @@ Em ordem:
 3. `src/cards/service.py` — batch add com cache Redis first + LibreTranslate para os misses.
 4. `src/anki/service.py` — geração de `.apkg` com `genanki`.
 5. `src/anki/router.py` — endpoint `GET /sessions/{id}/export`.
-6. Cards router + example endpoint (`POST /cards/{card_id}/example`).
+6. ~~Cards router + example endpoint (`POST /cards/{card_id}/example`).~~ ✓ Implementado com Gemini 2.5 Flash.
 7. Testes de export — valida que `.apkg` é um ZIP válido com `collection.anki2` e `media`.
 
 # FastAPI Best Practices for AI Agents
