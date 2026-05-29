@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from datetime import datetime
 
 from src.exceptions import NotFoundException
 from src.sessions.models import Session as SessionRow
@@ -8,7 +9,7 @@ from src.sessions.schemas import SessionCreate
 
 
 async def create_session(db: AsyncSession, body: SessionCreate) -> SessionRow:
-    row = SessionRow(name=body.name, source=body.source)
+    row = SessionRow(name=body.name, source=body.source, created_at=datetime.now())
     db.add(row)
     await db.commit()
     await db.refresh(row)

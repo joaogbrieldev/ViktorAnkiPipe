@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.cards.schemas import CardOut
@@ -14,6 +16,7 @@ class SessionOut(BaseModel):
     id: int
     name: str
     source: str | None
+    created_at: datetime
 
 
 class SessionWithCards(SessionOut):
