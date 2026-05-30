@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#004493",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#c64f00",
+                    "on-surface": "#1a1b1f",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "on-secondary-container": "#fffbff",
+                    "surface-bright": "#faf9fe",
+                    "inverse-surface": "#2f3034",
+                    "on-error": "#ffffff",
+                    "background": "#faf9fe",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#351000",
+                    "on-secondary-fixed-variant": "#3631b4",
+                    "primary-fixed": "#d8e2ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e3e2e7",
+                    "secondary": "#4c4aca",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-tint": "#005bc1",
+                    "outline-variant": "#c1c6d7",
+                    "on-surface-variant": "#414755",
+                    "surface-dim": "#dad9df",
+                    "surface-container-high": "#e9e7ed",
+                    "surface-container-low": "#f4f3f8",
+                    "primary-container": "#0070eb",
+                    "secondary-container": "#6664e4",
+                    "surface": "#faf9fe",
+                    "on-secondary-fixed": "#0c006a",
+                    "surface-container": "#eeedf3",
+                    "tertiary-fixed": "#ffdbcc",
+                    "secondary-fixed": "#e2dfff",
+                    "inverse-primary": "#adc6ff",
+                    "outline": "#717786",
+                    "primary": "#0058bc",
+                    "on-error-container": "#93000a",
+                    "tertiary": "#9e3d00",
+                    "surface-variant": "#e3e2e7",
+                    "primary-fixed-dim": "#adc6ff",
+                    "secondary-fixed-dim": "#c2c1ff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "on-background": "#1a1b1f",
+                    "on-primary-container": "#fefcff",
+                    "on-primary-fixed": "#001a41",
+                    "inverse-on-surface": "#f1f0f5",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "24px",
+                    "gutter": "8px",
+                    "margin-main": "16px",
+                    "stack-sm": "4px",
+                    "safe-bottom": "34px",
+                    "stack-md": "12px"
+            },
+            "fontFamily": {
+                    "subhead": ["Inter"],
+                    "footnote": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "nav-title": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "callout": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "subhead": ["15px", {"lineHeight": "20px", "letterSpacing": "-0.24px", "fontWeight": "400"}],
+                    "footnote": ["13px", {"lineHeight": "18px", "letterSpacing": "-0.08px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "34px", "letterSpacing": "0.34px", "fontWeight": "700"}],
+                    "nav-title": ["17px", {"lineHeight": "22px", "letterSpacing": "-0.41px", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0px", "fontWeight": "400"}],
+                    "headline-lg": ["34px", {"lineHeight": "41px", "letterSpacing": "0.37px", "fontWeight": "700"}],
+                    "callout": ["16px", {"lineHeight": "21px", "letterSpacing": "-0.32px", "fontWeight": "400"}],
+                    "body-md": ["17px", {"lineHeight": "22px", "letterSpacing": "-0.41px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .camera-overlay { background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.4) 100%); }
+        .shutter-outer { border: 4px solid white; transition: transform 0.1s ease; }
+        .shutter-outer:active { transform: scale(0.9); }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-black text-white font-body-md text-body-md overflow-hidden antialiased">
+<!-- Camera Viewport Canvas -->
+<div class="fixed inset-0 z-0">
+<img alt="Camera feed" class="w-full h-full object-cover blur-sm opacity-80" data-alt="A high-resolution, atmospheric close-up of a printed book page with crisp black serif typography on creamy, off-white paper. The image is captured through a high-end camera lens, resulting in a shallow depth of field where the central text is slightly blurred as if seen through a camera's viewfinder. The lighting is soft and natural, coming from the side to emphasize the texture of the paper, maintaining a clean, modern iOS-inspired light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrstxS4Y4wrhCjOMtW-M4S-XYyuKumt2ylYsc1tn0-EO2U3hTAA98BWzzcvSQwadWZmGzMeoaAT7EnjA2tJajLXSQsyplhJIt_mGu1K4Bq-DFH7AnBTp6mLOuB6repvKlKCBlLdpR4QkIAveaWBwA6kLknEqjvQAUYgFU_bUi4NoMJUTvPub1lSBboZa2ivh3Lzce0ff1CD5_s0nwX9bgRr7qCTLKtidQKgz-AQfVt7GZc-uanUnWleAt7I4_PfjAl9Wu-1hVX"/>
+<div class="absolute inset-0 camera-overlay"></div>
+</div>
+<!-- UI Layer -->
+<main class="relative z-10 flex flex-col h-screen px-margin-main pt-12 pb-safe-bottom">
+<!-- Top Control Bar -->
+<header class="flex justify-between items-center w-full">
+<button aria-label="Close" class="w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-white text-[24px]">close</span>
+</button>
+<div class="px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-lg border border-white/10">
+<p class="font-subhead text-subhead text-white tracking-wide">Aponte para o texto para traduzir</p>
+</div>
+<button aria-label="Flashlight" class="w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:scale-95 transition-transform" id="flash-toggle" onclick="toggleFlash()">
+<span class="material-symbols-outlined text-white text-[24px]" id="flash-icon">flashlight_on</span>
+</button>
+</header>
+<!-- Scanning Guides (Asymmetric Bento-style Layout for OCR feedback) -->
+<div class="flex-grow flex items-center justify-center relative">
+<!-- OCR Detection Brackets -->
+<div class="relative w-72 h-48">
+<div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary-container rounded-tl-lg"></div>
+<div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary-container rounded-tr-lg"></div>
+<div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary-container rounded-bl-lg"></div>
+<div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary-container rounded-br-lg"></div>
+<!-- Mock Detected Words -->
+<div class="absolute top-1/4 left-1/4 px-2 py-0.5 bg-primary/20 rounded-sm border border-primary/30 backdrop-blur-sm animate-pulse">
+<span class="text-xs font-label-caps text-white">Detecting...</span>
+</div>
+<div class="absolute bottom-1/3 right-1/4 px-2 py-0.5 bg-primary/20 rounded-sm border border-primary/30 backdrop-blur-sm animate-pulse" style="animation-delay: 0.5s;">
+<span class="text-xs font-label-caps text-white">Anki Sync</span>
+</div>
+</div>
+</div>
+<!-- Capture Controls -->
+<section class="flex flex-col items-center gap-stack-lg">
+<!-- Gallery Preview Thumbnail -->
+<div class="flex items-center justify-around w-full mb-4">
+<div class="w-12 h-12 rounded-lg border-2 border-white/20 overflow-hidden bg-surface-container-highest">
+<img alt="Last photo" class="w-full h-full object-cover" data-alt="A tiny, square thumbnail image showing a brightly lit book cover with vibrant blue and orange graphics. The photograph is clean and minimal, designed to look like a gallery preview icon on a mobile device's camera interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp4pgXcfIQGG-G65zHZhrjOpGA6Rpq66t3_3haISyV4APn2yaIQF8_t-OPQ3DSRDMxh0vGixl-LJtQPiIj2hcS7QHu_I7XmrYucwwSBpgAAmdGvsFs7OPKzvK4ND3EI29i0KXVFT76f-xSp96k2czuWg6MmxIB5WDNNwet6BRJOjA30i0ISzhDmJHOSSpLFDoYR7ZmFp5XQvKLNLnDGnG2x0gOaA6HZf8mYGpd6bdS7N0fa8_mP46iCPehAQHVNhsvWwQyXJL7"/>
+</div>
+<!-- Shutter Button -->
+<button class="shutter-outer w-20 h-20 rounded-full flex items-center justify-center bg-transparent p-1 shadow-2xl">
+<div class="w-full h-full rounded-full bg-white active:bg-surface-container-highest transition-colors"></div>
+</button>
+<!-- Lens Switcher / Mode -->
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-white text-[24px]">flip_camera_ios</span>
+</button>
+</div>
+</section>
+<!-- Hidden/Translucent Bottom Navigation (Shared Component Logic) -->
+<!-- Logic: User specified it should be hidden or translucent. Using a minimal indicator. -->
+<nav class="fixed bottom-0 left-0 w-full bg-surface/10 backdrop-blur-xl border-t border-white/5 h-16 flex justify-around items-center px-4 md:hidden">
+<div class="flex flex-col items-center justify-center text-white/40">
+<span class="material-symbols-outlined text-[24px]">library_books</span>
+<span class="font-label-caps text-label-caps mt-1">Sessions</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary-fixed-dim font-semibold">
+<span class="material-symbols-outlined text-[24px]">photo_camera</span>
+<span class="font-label-caps text-label-caps mt-1">Scan</span>
+</div>
+<div class="flex flex-col items-center justify-center text-white/40">
+<span class="material-symbols-outlined text-[24px]">style</span>
+<span class="font-label-caps text-label-caps mt-1">Cards</span>
+</div>
+</nav>
+</main>
+<script>
+        function toggleFlash() {
+            const icon = document.getElementById('flash-icon');
+            const btn = document.getElementById('flash-toggle');
+            if (icon.innerText === 'flashlight_on') {
+                icon.innerText = 'flashlight_off';
+                btn.classList.add('bg-primary-container/40');
+                btn.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                icon.innerText = 'flashlight_on';
+                btn.classList.remove('bg-primary-container/40');
+                btn.style.fontVariationSettings = "'FILL' 0";
+            }
+        }
+
+        // Simple haptic-like feedback for the shutter
+        document.querySelector('.shutter-outer').addEventListener('click', () => {
+            document.body.style.backgroundColor = 'white';
+            setTimeout(() => {
+                document.body.style.backgroundColor = 'black';
+            }, 50);
+        });
+    </script>
+</body></html>
