@@ -1,5 +1,9 @@
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.cards.models import Card
+from src.sessions.models import Session
 
 
 @pytest.mark.asyncio
@@ -35,7 +39,30 @@ async def test_list_sessions(client: AsyncClient):
     await client.post("/sessions", json={"name": "Session B"})
     resp = await client.get("/sessions")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert len(data) == 2
+    assert all(item["card_count"] == 0 for item in data)
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_includes_card_count(
+    client: AsyncClient, db_session: AsyncSession
+):
+    session = Session(name="With Cards")
+    db_session.add(session)
+    await db_session.flush()
+    db_session.add_all(
+        [
+            Card(session_id=session.id, source_text="hello", translated_text="olá"),
+            Card(session_id=session.id, source_text="world", translated_text="mundo"),
+        ]
+    )
+    await db_session.commit()
+
+    resp = await client.get("/sessions")
+    assert resp.status_code == 200
+    match = next(item for item in resp.json() if item["id"] == session.id)
+    assert match["card_count"] == 2
 
 
 @pytest.mark.asyncio

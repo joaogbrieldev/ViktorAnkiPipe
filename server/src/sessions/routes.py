@@ -23,7 +23,11 @@ async def create_session(body: SessionCreate, db: DbDep) -> SessionOut:
 
 @router.get("", response_model=list[SessionOut])
 async def list_sessions(db: DbDep, source: str | None = None) -> list[SessionOut]:
-    return await service.list_sessions(db, source=source)
+    rows = await service.list_sessions(db, source=source)
+    return [
+        SessionOut.model_validate(session).model_copy(update={"card_count": card_count})
+        for session, card_count in rows
+    ]
 
 
 @router.get("/{session_id}", response_model=SessionWithCards)

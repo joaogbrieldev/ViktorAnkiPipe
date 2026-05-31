@@ -17,6 +17,7 @@ class SessionOut(BaseModel):
     name: str
     source: str | None
     created_at: datetime
+    card_count: int = 0
 
 
 class SessionWithCards(SessionOut):

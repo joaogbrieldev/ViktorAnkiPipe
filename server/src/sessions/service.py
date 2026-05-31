@@ -1,8 +1,10 @@
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from datetime import datetime
 
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from src.cards.models import Card
 from src.exceptions import NotFoundException
 from src.sessions.models import Session as SessionRow
 from src.sessions.schemas import SessionCreate
@@ -16,12 +18,19 @@ async def create_session(db: AsyncSession, body: SessionCreate) -> SessionRow:
     return row
 
 
-async def list_sessions(db: AsyncSession, source: str | None = None) -> list[SessionRow]:
-    stmt = select(SessionRow).order_by(SessionRow.id.desc())
+async def list_sessions(
+    db: AsyncSession, source: str | None = None
+) -> list[tuple[SessionRow, int]]:
+    stmt = (
+        select(SessionRow, func.count(Card.id).label("card_count"))
+        .outerjoin(Card, Card.session_id == SessionRow.id)
+        .group_by(SessionRow.id)
+        .order_by(SessionRow.id.desc())
+    )
     if source is not None:
         stmt = stmt.where(SessionRow.source == source)
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    return [(row, card_count) for row, card_count in result.all()]
 
 
 async def get_session_by_id(db: AsyncSession, session_id: int) -> SessionRow:
