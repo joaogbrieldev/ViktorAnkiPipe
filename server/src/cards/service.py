@@ -90,3 +90,14 @@ async def list_cards(db: AsyncSession, source: str | None = None) -> list[Card]:
     stmt = select(Card).order_by(Card.id.desc())
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+
+async def delete_card(db: AsyncSession, session_id: int, card_id: int) -> None:
+    result = await db.execute(
+        select(Card).where(Card.id == card_id, Card.session_id == session_id)
+    )
+    card = result.scalar_one_or_none()
+    if card is None:
+        raise CardNotFoundException()
+    await db.delete(card)
+    await db.commit()

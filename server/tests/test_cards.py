@@ -222,3 +222,54 @@ async def test_batch_add_empty_items_rejected(client: AsyncClient):
     sid = await _create_session(client)
     resp = await client.post(f"/sessions/{sid}/cards", json={"items": []})
     assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# DELETE /sessions/{id}/cards/{card_id}
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_delete_card(client: AsyncClient, db_session: AsyncSession, _mock_redis_all_miss):
+    sid = await _create_session(client)
+    add_resp = await client.post(
+        f"/sessions/{sid}/cards",
+        json={"items": [{"source_text": "ephemeral"}, {"source_text": "serendipity"}]},
+    )
+    assert add_resp.status_code == 201
+    cards = add_resp.json()
+    card_id = cards[0]["id"]
+
+    resp = await client.delete(f"/sessions/{sid}/cards/{card_id}")
+    assert resp.status_code == 204
+
+    session_resp = await client.get(f"/sessions/{sid}")
+    assert session_resp.status_code == 200
+    remaining = session_resp.json()["cards"]
+    assert len(remaining) == 1
+    assert remaining[0]["id"] != card_id
+
+
+@pytest.mark.asyncio
+async def test_delete_card_not_found(client: AsyncClient):
+    sid = await _create_session(client)
+    resp = await client.delete(f"/sessions/{sid}/cards/99999")
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "not_found"
+
+
+@pytest.mark.asyncio
+async def test_delete_card_wrong_session(
+    client: AsyncClient, db_session: AsyncSession, _mock_redis_all_miss
+):
+    sid_a = await _create_session(client, name="Session A")
+    sid_b = await _create_session(client, name="Session B")
+    add_resp = await client.post(
+        f"/sessions/{sid_a}/cards",
+        json={"items": [{"source_text": "ephemeral"}]},
+    )
+    card_id = add_resp.json()[0]["id"]
+
+    resp = await client.delete(f"/sessions/{sid_b}/cards/{card_id}")
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "not_found"

@@ -65,3 +65,13 @@ async def add_cards(
         body.target_lang,
     )
 
+
+@router.delete(
+    "/{session_id}/cards/{card_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete card",
+    description="Removes a single card from the session.",
+)
+async def delete_card(session_id: int, card_id: int, db: DbDep) -> None:
+    await cards_service.delete_card(db, session_id, card_id)
+
