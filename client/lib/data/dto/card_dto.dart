@@ -1,3 +1,18 @@
+class CardCreateBody {
+  const CardCreateBody({
+    required this.sourceText,
+    this.context,
+  });
+
+  final String sourceText;
+  final String? context;
+
+  Map<String, dynamic> toJson() => {
+        'source_text': sourceText,
+        if (context != null) 'context': context,
+      };
+}
+
 class CardDto {
   const CardDto({
     required this.id,
