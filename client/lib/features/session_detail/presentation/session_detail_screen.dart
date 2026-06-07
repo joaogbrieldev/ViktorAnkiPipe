@@ -12,7 +12,10 @@ import 'package:client/core/widgets/grouped_list_card.dart';
 import 'package:client/data/dto/card_dto.dart';
 import 'package:client/data/dto/session_detail_dto.dart';
 import 'package:client/data/dto/session_dto.dart';
+import 'package:client/features/export/application/export_service.dart';
+import 'package:client/features/export/presentation/export_status_chip.dart';
 import 'package:client/features/session_detail/application/session_detail_controller.dart';
+import 'package:client/features/sessions/application/sessions_controller.dart';
 import 'package:client/features/session_detail/widgets/card_detail_sheet.dart';
 import 'package:client/features/session_detail/widgets/card_tile.dart';
 
@@ -25,11 +28,26 @@ class SessionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncDetail = ref.watch(sessionDetailControllerProvider(id));
 
+    final sessionName = asyncDetail.valueOrNull?.session.name;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: GlassAppBar(
-        title: asyncDetail.valueOrNull?.session.name ?? 'Detalhe',
-        actions: const [],
+        title: sessionName ?? 'Detalhe',
+        actions: sessionName == null
+            ? const []
+            : [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Excluir sessão',
+                  onPressed: () => _confirmAndDeleteSession(
+                    context,
+                    ref,
+                    id: id,
+                    sessionName: sessionName,
+                  ),
+                ),
+              ],
       ),
       body: asyncDetail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -50,6 +68,46 @@ class SessionDetailScreen extends ConsumerWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+Future<void> _confirmAndDeleteSession(
+  BuildContext context,
+  WidgetRef ref, {
+  required String id,
+  required String sessionName,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Deletar sessão?'),
+      content: Text(
+        'A sessão "$sessionName" e todos os seus cards serão removidos.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('Deletar'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  try {
+    await ref.read(sessionsControllerProvider.notifier).delete(id);
+    if (!context.mounted) return;
+    context.go(Routes.sessions);
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Falha ao deletar sessão')),
     );
   }
 }
@@ -80,6 +138,7 @@ class _DetailBody extends StatelessWidget {
           SliverToBoxAdapter(
             child: _Header(
               session: detail.session,
+              sessionId: sessionId,
               cardCount: detail.cards.length,
               onScanTap: onScanTap,
             ),
@@ -128,16 +187,73 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
+class _Header extends ConsumerStatefulWidget {
   const _Header({
     required this.session,
+    required this.sessionId,
     required this.cardCount,
     required this.onScanTap,
   });
 
   final SessionDto session;
+  final String sessionId;
   final int cardCount;
   final VoidCallback onScanTap;
+
+  @override
+  ConsumerState<_Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends ConsumerState<_Header> {
+  ExportStatus _status = ExportStatus.idle;
+  DateTime? _lastExportedAt;
+  ExportCancellation? _cancellation;
+
+  @override
+  void dispose() {
+    _cancellation?.cancelled = true;
+    super.dispose();
+  }
+
+  Future<void> _export() async {
+    final cancellation = ExportCancellation();
+    setState(() {
+      _status = ExportStatus.exporting;
+      _cancellation = cancellation;
+      _lastExportedAt = null;
+    });
+
+    try {
+      final exportedAt = await ref.read(exportServiceProvider).export(
+            sessionId: widget.sessionId,
+            sessionName: widget.session.name,
+            cancellation: cancellation,
+          );
+      if (!mounted) return;
+      setState(() {
+        _status = ExportStatus.success;
+        _lastExportedAt = exportedAt;
+      });
+    } on CancelledExportException {
+      if (!mounted) return;
+      setState(() => _status = ExportStatus.idle);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _status = ExportStatus.error);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Falha ao exportar'),
+          action: SnackBarAction(
+            label: 'Tentar novamente',
+            onPressed: _export,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _cancellation = null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +268,13 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            session.name,
+            widget.session.name,
             style: AppText.headlineLgMobile,
           ),
-          if (session.source != null) ...[
+          if (widget.session.source != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              session.source!,
+              widget.session.source!,
               style: AppText.subhead.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
@@ -169,12 +285,13 @@ class _Header extends StatelessWidget {
             children: [
               _Chip(
                 icon: Icons.style_outlined,
-                label: '$cardCount card${cardCount == 1 ? '' : 's'}',
+                label:
+                    '${widget.cardCount} card${widget.cardCount == 1 ? '' : 's'}',
               ),
               const SizedBox(width: AppSpacing.sm),
               _Chip(
                 icon: Icons.calendar_today_outlined,
-                label: _formatDate(session.createdAt),
+                label: _formatDate(widget.session.createdAt),
               ),
             ],
           ),
@@ -183,7 +300,7 @@ class _Header extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: onScanTap,
+                  onPressed: widget.onScanTap,
                   icon: const Icon(Icons.photo_camera_outlined, size: 18),
                   label: const Text('Scan +'),
                   style: FilledButton.styleFrom(
@@ -196,29 +313,68 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.download_outlined, size: 18),
-                  label: const Text('Exportar'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
-                ),
+                child: _status == ExportStatus.exporting
+                    ? _ExportProgress()
+                    : OutlinedButton.icon(
+                        onPressed: _export,
+                        icon:
+                            const Icon(Icons.download_outlined, size: 18),
+                        label: const Text('Exportar'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),
+          if (_status != ExportStatus.idle) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ExportStatusChip(
+              status: _status,
+              exportedAt: _lastExportedAt,
+            ),
+          ],
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
+  static String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
+  }
+}
+
+class _ExportProgress extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.outlineVariant),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const LinearProgressIndicator(),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Exportando...',
+            style: AppText.footnote.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:client/core/theme/app_colors.dart';
 import 'package:client/core/theme/app_spacing.dart';
 import 'package:client/core/theme/app_typography.dart';
 import 'package:client/data/dto/card_dto.dart';
+import 'package:client/features/ai_example/presentation/example_section.dart';
 import 'package:client/features/session_detail/application/session_detail_controller.dart';
 
 class CardDetailSheet extends ConsumerWidget {
@@ -66,7 +67,7 @@ class CardDetailSheet extends ConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: AppSpacing.md),
-                    _ExampleSection(card: card, sessionId: sessionId),
+                    ExampleSection(card: card, sessionId: sessionId),
                     const SizedBox(height: AppSpacing.xl),
                     OutlinedButton.icon(
                       onPressed: () => _deleteCard(context, ref),
@@ -203,59 +204,3 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _ExampleSection extends StatelessWidget {
-  const _ExampleSection({required this.card, required this.sessionId});
-
-  final CardDto card;
-  final String sessionId;
-
-  @override
-  Widget build(BuildContext context) {
-    if (card.exampleSentence != null) {
-      return _SectionCard(
-        label: 'Frase exemplo',
-        value: card.exampleSentence!,
-        highlight: card.sourceText,
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Frase exemplo',
-            style: AppText.labelCaps.copyWith(
-              color: AppColors.outline,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-            label: const Text('Gerar frase de exemplo'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Disponível em breve (M4)',
-            style: AppText.footnote.copyWith(color: AppColors.outline),
-          ),
-        ],
-      ),
-    );
-  }
-}
