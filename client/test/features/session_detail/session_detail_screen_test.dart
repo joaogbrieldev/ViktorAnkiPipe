@@ -10,6 +10,7 @@ import 'package:client/data/dto/session_dto.dart';
 import 'package:client/data/repositories/card_repository.dart';
 import 'package:client/data/repositories/session_repository.dart';
 import 'package:client/features/session_detail/presentation/session_detail_screen.dart';
+import 'package:client/features/sessions/application/sessions_controller.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
 
@@ -162,7 +163,13 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(Dismissible),
+          matching: find.byIcon(Icons.delete_outline),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows error view when repository throws', (tester) async {
@@ -181,6 +188,62 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Falha ao carregar sessão'), findsOneWidget);
+    });
+
+    testWidgets('delete button removes session and navigates back', (
+      tester,
+    ) async {
+      final detail = SessionDetailDto(
+        session: _session(),
+        cards: [_card()],
+      );
+      when(() => mockSessionRepo.getById('s1'))
+          .thenAnswer((_) async => detail);
+      when(() => mockSessionRepo.list()).thenAnswer((_) async => [_session()]);
+      when(() => mockSessionRepo.delete('s1')).thenAnswer((_) async {});
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/sessions',
+            builder: (context, state) =>
+                const Scaffold(body: Text('Sessions list')),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => SessionDetailScreen(
+                  id: state.pathParameters['id']!,
+                ),
+              ),
+            ],
+          ),
+        ],
+        initialLocation: '/sessions/s1',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionRepositoryProvider.overrideWithValue(mockSessionRepo),
+            cardRepositoryProvider.overrideWithValue(mockCardRepo),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Excluir sessão'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Excluir sessão'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Deletar sessão?'), findsOneWidget);
+
+      await tester.tap(find.text('Deletar'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockSessionRepo.delete('s1')).called(1);
+      expect(find.text('Sessions list'), findsOneWidget);
     });
   });
 }
