@@ -2,47 +2,47 @@
 
 ## Data
 
-- [ ] **R-01** Criar `lib/data/dto/card_dto.dart` com `CardDto` e `CardCreateBody`.
-- [ ] **R-02** Criar `lib/data/repositories/card_repository.dart`
+- [x] **R-01** Criar `lib/data/dto/card_dto.dart` com `CardDto` e `CardCreateBody`.
+- [x] **R-02** Criar `lib/data/repositories/card_repository.dart`
        (`addBatch`, `delete`, `generateExample`).
-- [ ] **R-03** Criar `lib/data/repositories/translate_repository.dart`
+- [x] **R-03** Criar `lib/data/repositories/translate_repository.dart`
        (`translate`).
-- [ ] **R-04** Providers Riverpod para ambos os repositories.
+- [x] **R-04** Providers Riverpod para ambos os repositories.
 
 ## State
 
-- [ ] **R-05** `TranslationState` em
+- [x] **R-05** `TranslationState` em
        `lib/features/translation_result/application/translation_state.dart`.
-- [ ] **R-06** `TranslationController` (StateNotifier) com `fetch` +
+- [x] **R-06** `TranslationController` (StateNotifier) com `fetch` +
        `addToSession`.
 
 ## UI
 
-- [ ] **R-07** Criar `TranslationResultScreen` em
+- [x] **R-07** Criar `TranslationResultScreen` em
        `lib/features/translation_result/presentation/translation_result_screen.dart`.
-- [ ] **R-08** Implementar `_BackgroundImage` (foto congelada da câmera +
+- [x] **R-08** Implementar `_BackgroundImage` (foto congelada da câmera +
        overlay de bounding boxes mockados de contexto).
-- [ ] **R-09** Implementar `DraggableScrollableSheet` com handle bar e
+- [x] **R-09** Implementar `DraggableScrollableSheet` com handle bar e
        layout do sheet.
-- [ ] **R-10** Implementar `_SectionCard` reutilizável.
-- [ ] **R-11** Implementar destaque do contexto via `RichText`.
-- [ ] **R-12** Implementar CTA "Adicionar ao deck" com loading inline.
-- [ ] **R-13** Implementar `_SessionPickerSheet` (reusa
+- [x] **R-10** Implementar `_SectionCard` reutilizável.
+- [x] **R-11** Implementar destaque do contexto via `RichText`.
+- [x] **R-12** Implementar CTA "Adicionar ao deck" com loading inline.
+- [x] **R-13** Implementar `_SessionPickerSheet` (reusa
        `sessionsControllerProvider`). Inclui "Criar sessão rápida"
        que chama `SessionsController.create()` e seleciona automaticamente.
-- [ ] **R-14** Após sucesso: `context.pop()` e mostrar `SnackBar` na tela
+- [x] **R-14** Após sucesso: `context.pop()` e mostrar `SnackBar` na tela
        anterior via `Future.microtask`.
 
 ## Routing
 
-- [ ] **R-15** Registrar rota `/result` (fora do shell, fullscreen) em
+- [x] **R-15** Registrar rota `/result` (fora do shell, fullscreen) em
        `app_router.dart` com `extra` opcional.
-- [ ] **R-16** Camera `_OcrTokens.onTap` empurra `/result`.
+- [x] **R-16** Camera `_OcrTokens.onTap` empurra `/result`.
 
 ## Testes
 
-- [ ] **R-17** Unit test do `TranslationController`.
-- [ ] **R-18** Widget test do `TranslationResultScreen` com providers
+- [x] **R-17** Unit test do `TranslationController`.
+- [x] **R-18** Widget test do `TranslationResultScreen` com providers
        mockados (verifica 3 cards e CTA).
 
 ## Verificação manual

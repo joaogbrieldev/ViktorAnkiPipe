@@ -1,13 +1,13 @@
 # Tasks: AI Example
 
-- [ ] **AI-01** Confirmar que `CardRepository.generateExample` está
+- [x] **AI-01** Confirmar que `CardRepository.generateExample` está
        implementado (Translation-result tarefa R-02).
-- [ ] **AI-02** Adicionar `CardDto.copyWith` (se ainda não existir).
-- [ ] **AI-03** Criar `ExampleSection` widget em
+- [x] **AI-02** Adicionar `CardDto.copyWith` (se ainda não existir).
+- [x] **AI-03** Criar `ExampleSection` widget em
        `lib/features/ai_example/presentation/example_section.dart`.
-- [ ] **AI-04** Integrar `ExampleSection` ao `CardDetailSheet` (substituindo
+- [x] **AI-04** Integrar `ExampleSection` ao `CardDetailSheet` (substituindo
        o placeholder "Frase exemplo").
-- [ ] **AI-05** Teste unit: chamada do `generateExample` integra com
+- [x] **AI-05** Teste unit: chamada do `generateExample` integra com
        `SessionDetailController.setExampleFor`.
 
 ## Verificação manual
