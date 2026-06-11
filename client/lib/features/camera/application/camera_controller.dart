@@ -33,7 +33,12 @@ class CameraNotifier extends StateNotifier<CameraState> {
     CameraDescription desc,
     ResolutionPreset preset,
   ) =>
-      CameraController(desc, preset);
+      CameraController(
+        desc,
+        preset,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
 
   static TextRecognizer _defaultRecognizer() =>
       TextRecognizer(script: TextRecognitionScript.latin);
@@ -49,7 +54,11 @@ class CameraNotifier extends StateNotifier<CameraState> {
   }
 
   Future<void> initialize() async {
+    if (state.controller?.value.isInitialized == true) return;
+
     try {
+      await state.controller?.dispose();
+
       _cameras = await _getCameras();
       if (_cameras.isEmpty) {
         if (mounted) state = state.copyWith(error: 'Nenhuma câmera disponível');
@@ -77,7 +86,10 @@ class CameraNotifier extends StateNotifier<CameraState> {
     if (mounted) state = CameraState(flashMode: state.flashMode);
   }
 
-  Future<void> resumeCamera() => initialize();
+  Future<void> resumeCamera() async {
+    if (state.controller?.value.isInitialized == true) return;
+    await initialize();
+  }
 
   int _backCameraIndex() {
     final idx = _cameras.indexWhere(

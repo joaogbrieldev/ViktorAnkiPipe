@@ -50,13 +50,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    final notifier = ref.read(cameraNotifierProvider.notifier);
     switch (lifecycleState) {
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        ref.read(cameraNotifierProvider.notifier).pauseCamera();
+        notifier.pauseCamera();
       case AppLifecycleState.resumed:
-        ref.read(cameraNotifierProvider.notifier).resumeCamera();
-      default:
+        notifier.resumeCamera();
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
         break;
     }
   }
